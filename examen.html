@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Biblioteca yo> </title>
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .contenedor {
+            max-width: 450px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border: 1px solid #ccc;
+        }
+
+        h2, h3 { color: #333; margin-top: 0; }
+
+        label { display: block; margin-top: 15px; font-size: 14px; font-weight: bold; }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #999;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover { background-color: #000; }
+
+        .lista-datos { margin-top: 20px; }
+
+        .item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 5px;
+        }
+
+        .tipo {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .titulo-item { font-size: 18px; color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h2>Biblioteca</h2>
+
+    <label>Tipo:</label>
+    <select id="tipo" onchange="actualizarForm()">
+        <option value="libro">Libro</option>
+        <option value="revista">Revista</option>
+    </select>
+
+    <label>Título:</label>
+    <input type="text" id="titulo">
+
+    <label>Autor:</label>
+    <input type="text" id="autor">
+
+    <div id="formLibro">
+        <label>ISBN:</label>
+        <input type="text" id="isbn">
+        <label>Páginas:</label>
+        <input type="number" id="paginas">
+    </div>
+
+    <div id="formRevista" style="display: none;">
+        <label>Edición:</label>
+        <input type="text" id="edicion">
+        <label>Periodicidad:</label>
+        <input type="text" id="periodicidad">
+    </div>
+
+    <button onclick="guardar()">Guardar Material</button>
+
+    <hr style="margin: 25px 0;">
+
+    <h3>Catálogo</h3>
+    <input type="text" id="buscador" onkeyup="buscar()" placeholder="Filtrar por título...">
+    
+    <div id="lista" class="lista-datos"></div>
+</div>
+
+<script>
+
+    class Material {  // Esta es la clase principal
+        constructor(titulo, autor) {  // El constructor recibe dos parámetros
+            this.titulo = titulo;  // Estos son los atributos de la clase
+            this.autor = autor;
+        }
+    }
+
+    // El molde de Libro que copia al de material osea la herencia
+    class Libro extends Material { 
+        constructor(titulo, autor, isbn, paginas) {
+            super(titulo, autor); // Le pasa el título y autor al molde padre
+            this.isbn = isbn;     // Guarda su propio dato: ISBN
+            this.paginas = paginas; // Guarda su propio dato: Páginas
+            this.tipo = "Libro";
+        }
+    }
+    // El molde de Revista que también "copia" a Material
+    class Revista extends Material {
+        constructor(titulo, autor, edicion, periodicidad) {
+            super(titulo, autor);   // Le avisa al padre el título y autor
+            this.edicion = edicion; // Guarda su dato: Edición
+            this.periodicidad = periodicidad; // Guarda su dato: Frecuencia
+            this.tipo = "Revista";
+        }
+    }
+    
+    let inventario = []; // Creamos una lista vacía para guardar los objetos
+
+    // Si el navegador ya tiene datos guardados...
+    if (localStorage.getItem("datos")) {
+        // ...los saca de la memoria y los convierte de texto a lista de objetos
+        inventario = JSON.parse(localStorage.getItem("datos"));
+    }
+
+    function actualizarForm() {
+        // Mira qué elegiste en el menú (libro o revista)
+        let seleccion = document.getElementById("tipo").value;
+        // Si es libro muestra sus campos, si no, los esconde (y al revés)
+        document.getElementById("formLibro").style.display = seleccion === "libro" ? "block" : "none";
+        document.getElementById("formRevista").style.display = seleccion === "revista" ? "block" : "none";
+    }
+
+    function guardar() {
+        // Agarra lo que escribiste en los cuadros de texto
+        let titulo = document.getElementById("titulo").value;
+        let autor = document.getElementById("autor").value;
+        let tipo = document.getElementById("tipo").value;
+
+        // Si no escribiste nada, te avisa y no hace nada más
+        if (titulo === "" || autor === "") return alert("Faltan datos");
+
+        let nuevo;
+        // Si elegiste libro, crea un objeto usando el molde de Libro
+        if (tipo === "libro") {
+            let isbn = document.getElementById("isbn").value;
+            let paginas = document.getElementById("paginas").value;
+            nuevo = new Libro(titulo, autor, isbn, paginas);
+        } else {
+            // Si no, crea un objeto usando el molde de Revista
+            let edicion = document.getElementById("edicion").value;
+            let periodicidad = document.getElementById("periodicidad").value;
+            nuevo = new Revista(titulo, autor, edicion, periodicidad);
+        }
+
+        // Mete el objeto nuevo a nuestra lista de inventario
+        inventario.push(nuevo);
+        // Guarda toda la lista en el navegador como si fuera un mensaje de texto
+        localStorage.setItem("datos", JSON.stringify(inventario));
+        
+        // Borra lo que escribiste en los cuadros para que queden limpios
+        document.getElementById("titulo").value = "";
+        document.getElementById("autor").value = "";
+        
+        // Llama a la función de abajo para que aparezca en la lista
+        buscar();
+    }
+
+    function buscar() {
+        // Selecciona el lugar donde vamos a poner la lista en el HTML
+        let contenedor = document.getElementById("lista");
+        // Mira qué escribiste en el buscador y lo pone en minúsculas
+        let buscar = document.getElementById("buscador").value.toLowerCase();
+        
+        contenedor.innerHTML = ""; // Borra la lista vieja para poner la actualizada
+
+        // Empieza a revisar libro por libro de toda nuestra lista
+        for (let i = 0; i < inventario.length; i++) {
+            let m = inventario[i]; // 'm' es el libro actual que está revisando
+
+            // Si el nombre del libro tiene las letras que escribiste en el buscador...
+            if (m.titulo.toLowerCase().includes(buscar)) {
+                
+                // Prepara el texto extra dependiendo de si es libro o revista
+                let info = (m.tipo === "Libro") 
+                    ? `ISBN: ${m.isbn} | Pág: ${m.paginas}` 
+                    : `Edición: ${m.edicion} | ${m.periodicidad}`;
+
+                // Escribe el bloque de código en la página para que lo veamos
+                contenedor.innerHTML += `
+                    <div class="item">
+                        <div class="tipo">${m.tipo}</div>
+                        <div class="titulo-item">${m.titulo}</div>
+                        <div style="color: #555;">${m.autor}</div>
+                        <div style="font-size: 13px; color: #888;">${info}</div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    // Esta línea hace que la lista aparezca apenas abras la página
+    buscar();
+</script>
+</body>
+
+</html>
