@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Biblioteca yo> </title>
+    <title>Biblioteca yo</title>
     <style>
-
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -61,6 +60,13 @@
         }
 
         .titulo-item { font-size: 18px; color: #000; }
+        
+        .btn-borrar {
+            background-color: #900;
+            margin-top: 10px;
+            padding: 5px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -210,9 +216,19 @@
                         <div class="titulo-item">${m.titulo}</div>
                         <div style="color: #555;">${m.autor}</div>
                         <div style="font-size: 13px; color: #888;">${info}</div>
+                        <button class="btn-borrar" onclick="eliminar(${i})">Eliminar</button>
                     </div>
                 `;
             }
+        }
+    }
+
+    // Función para borrar un elemento de la lista y de la memoria
+    function eliminar(indice) {
+        if (confirm("¿Seguro que quieres borrar este material?")) {
+            inventario.splice(indice, 1); // Lo quita de la lista de objetos
+            localStorage.setItem("datos", JSON.stringify(inventario)); // Actualiza la memoria del navegador
+            buscar(); // Refresca la lista visual
         }
     }
 
@@ -220,5 +236,4 @@
     buscar();
 </script>
 </body>
-
 </html>
